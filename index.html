@@ -46,43 +46,49 @@ body{
 
 /* === РОБОЧИЙ ЕКРАН === */
 .work{ padding:0; height:100vh; }
-
-.work-inner{
-  height:100vh;
-  display:flex;
-  flex-direction:column;
-}
+.work-inner{ height:100vh; display:flex; flex-direction:column; }
 
 /* === РОБОЧА ЗОНА (РЗ) === */
 .rz{
   flex:1;
   background:var(--rz);
-  display:flex;
-
-  /* >>> ТВОЯ ВИМОГА <<< */
-  align-items:flex-start;     /* по верху */
-  justify-content:flex-start; /* зліва */
-
   position:relative;
   overflow:hidden;
+
+  /* Відображення (камера/фото) має починатися зверху зліва */
+  display:flex;
+  align-items:flex-start;      /* top */
+  justify-content:flex-start;  /* left */
 }
 
-/* === ВІДЕО ТА ФОТО === */
+/* ✅ Відео/фото: без розтягування, але приклеєні до top-left */
 #video, #preview{
-  width:100%;
-  height:100%;
-  object-fit:contain;   /* не розтягує */
   display:none;
 
-  /* щоб не "липло" до країв при масштабі */
+  /* не розтягуємо */
+  max-width:100%;
+  max-height:100%;
+  width:100%;
+  height:100%;
+
+  object-fit:contain;
+
+  /* прибираємо будь-які зсуви */
+  margin:0;
+  padding:0;
   align-self:flex-start;
 }
 
-/* Підказка */
+/* ✅ Підказка завжди по центру РЗ */
 .hint{
   position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%, -50%);
   text-align:center;
   color:#777;
+  width:min(90%, 420px);
+  line-height:1.4;
 }
 
 /* Нижні кнопки */
@@ -165,21 +171,23 @@ document.getElementById('btnStart').addEventListener('click', () => {
   screenWork.classList.add('active');
 });
 
-/* === ІМʼЯ ФАЙЛУ === */
 function makeFilename(){
   const d = new Date();
   return "kai_" + d.toISOString().replace(/[:.]/g,"-") + ".jpg";
 }
 
-/* === ОЧИЩЕННЯ РЗ ПРИ "ВИЙТИ" === */
 function clearRZ(){
   if(stream){
     stream.getTracks().forEach(t=>t.stop());
     stream = null;
   }
 
+  video.srcObject = null;
   video.style.display = "none";
+
+  preview.removeAttribute('src');
   preview.style.display = "none";
+
   hint.style.display = "block";
 
   lastBlob = null;
@@ -190,13 +198,13 @@ function clearRZ(){
   btnRight.textContent = "Світлини";
 }
 
-/* === УВІМКНУТИ КАМЕРУ === */
 async function startCamera(){
   stream = await navigator.mediaDevices.getUserMedia({
     video:{facingMode:"environment"}
   });
 
   video.srcObject = stream;
+
   video.style.display = "block";
   preview.style.display = "none";
   hint.style.display = "none";
@@ -207,7 +215,6 @@ async function startCamera(){
   lastBlob = null;
 }
 
-/* === ЗРОБИТИ ФОТО (БЕЗ АВТОЗБЕРЕЖЕННЯ) === */
 function takePhoto(){
   const canvas = document.createElement('canvas');
   canvas.width = video.videoWidth;
@@ -230,7 +237,6 @@ function takePhoto(){
   }, "image/jpeg", 0.92);
 }
 
-/* === ЗБЕРЕГТИ ФОТО === */
 function savePhoto(){
   if(!lastBlob){
     alert("Спочатку зроби фото!");
@@ -246,12 +252,11 @@ function savePhoto(){
   btnRight.textContent = "Фото";
 }
 
-/* === КНОПКИ === */
 btnLeft.addEventListener('click',()=>{
   if(!cameraOn){
     startCamera();
   } else {
-    clearRZ();   // Вийти = чиста РЗ
+    clearRZ(); // Вийти = чиста РЗ
   }
 });
 
@@ -267,7 +272,6 @@ btnRight.addEventListener('click',()=>{
   }
 });
 
-/* === ВИБІР ФОТО З ГАЛЕРЕЇ === */
 fileInput.addEventListener('change',()=>{
   const file = fileInput.files[0];
   if(!file) return;
