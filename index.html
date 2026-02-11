@@ -3,13 +3,12 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>KAI 07</title>
+<title>KAI 08</title>
 <style>
 :root{
   --bg:#ffffff;
   --rz:#f2f2f2;
   --text:#111;
-  --btn:#111;
 }
 
 *{box-sizing:border-box}
@@ -62,7 +61,7 @@ body{
   overflow:hidden;
 }
 
-/* Контейнер для медіа — найстабільніше для Chrome Android 9 */
+/* контейнер медіа */
 .media-box{
   position:absolute;
   top:0;
@@ -72,7 +71,9 @@ body{
   background:var(--rz);
 }
 
-/* Відео та фото — ЖОРСТКО top-left, без розтягування, з сірими полями */
+/* === ВІДЕО/ФОТО ===
+   contain + ЯКІР top-left (object-position)
+*/
 #video, #preview{
   position:absolute;
   top:0;
@@ -80,15 +81,25 @@ body{
 
   width:100%;
   height:100%;
-  max-width:100%;
-  max-height:100%;
 
-  object-fit:contain; /* без розтягування */
   display:none;
   background:var(--rz);
+
+  object-fit:contain;         /* не розтягує */
+  object-position:left top;   /* ✅ ЯКІР: зверху зліва */
+
+  /* прибираємо “дивні” ефекти на деяких Android */
+  margin:0;
+  padding:0;
+  border:0;
+  display:block;              /* важливо: block, не inline */
 }
 
-/* Підказка — завжди по центру РЗ */
+/* але display:block перекриває display:none, тому повертаємо через клас */
+.hidden{ display:none !important; }
+.shown{ display:block !important; }
+
+/* Підказка по центру */
 .hint{
   position:absolute;
   left:50%;
@@ -135,7 +146,7 @@ input[type="file"]{ display:none; }
 <!-- Екран 1 -->
 <section id="screenWelcome" class="screen active">
   <div class="card">
-    <h1>KAI 07</h1>
+    <h1>KAI 08</h1>
     <p>Мета — зробити з фото чорно-біле зображення.</p>
     <button id="btnStart" class="primary">Почати</button>
   </div>
@@ -147,8 +158,8 @@ input[type="file"]{ display:none; }
 
     <div class="rz">
       <div class="media-box">
-        <video id="video" autoplay playsinline></video>
-        <img id="preview" alt="preview"/>
+        <video id="video" class="hidden" autoplay playsinline></video>
+        <img id="preview" class="hidden" alt="preview"/>
       </div>
 
       <div class="hint" id="hint">
@@ -201,6 +212,15 @@ function makeFilename(){
   return `kai_${yyyy}-${mm}-${dd}_${hh}-${mi}-${ss}.jpg`;
 }
 
+function show(el){
+  el.classList.remove('hidden');
+  el.classList.add('shown');
+}
+function hide(el){
+  el.classList.remove('shown');
+  el.classList.add('hidden');
+}
+
 /* Повна очистка РЗ при "Вийти" */
 function clearRZ(){
   if(stream){
@@ -208,10 +228,10 @@ function clearRZ(){
     stream = null;
   }
   video.srcObject = null;
-  video.style.display = "none";
+  hide(video);
 
   preview.removeAttribute('src');
-  preview.style.display = "none";
+  hide(preview);
 
   hint.style.display = "block";
 
@@ -233,8 +253,8 @@ async function startCamera(){
 
     video.srcObject = stream;
 
-    video.style.display = "block";
-    preview.style.display = "none";
+    show(video);
+    hide(preview);
     hint.style.display = "none";
 
     cameraOn = true;
@@ -248,7 +268,7 @@ async function startCamera(){
   }
 }
 
-/* Зробити фото (без автозбереження), показати в РЗ, кнопка -> Зберегти */
+/* Фото (без автозбереження) + показ в РЗ + кнопка -> Зберегти */
 function takePhoto(){
   if(!stream) return;
 
@@ -276,8 +296,10 @@ function takePhoto(){
 
     const url = URL.createObjectURL(blob);
     preview.src = url;
-    preview.style.display = "block";
-    video.style.display = "none";
+
+    show(preview);
+    hide(video);
+    hint.style.display = "none";
 
     btnRight.textContent = "Зберегти";
   }, "image/jpeg", 0.92);
@@ -298,7 +320,6 @@ function savePhoto(){
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 
-  // після збереження повертаємо кнопку назад
   btnRight.textContent = "Фото";
 }
 
@@ -307,7 +328,7 @@ btnLeft.addEventListener('click', () => {
   if(!cameraOn){
     startCamera();
   } else {
-    clearRZ(); // Вийти = чиста РЗ
+    clearRZ();
   }
 });
 
@@ -330,12 +351,13 @@ fileInput.addEventListener('change', () => {
   const file = fileInput.files && fileInput.files[0];
   if(!file) return;
 
-  // якщо була камера — чистимо і зупиняємо
+  // якщо була камера — чистимо/зупиняємо
   clearRZ();
 
   const url = URL.createObjectURL(file);
   preview.src = url;
-  preview.style.display = "block";
+
+  show(preview);
   hint.style.display = "none";
 
   lastBlob = file;
