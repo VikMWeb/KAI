@@ -1,339 +1,237 @@
 <!doctype html>
 <html lang="uk">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>KAI</title>
-  <style>
-    :root{
-      --bg:#ffffff;
-      --rz:#f2f2f2;
-      --text:#111;
-      --muted:#666;
-      --btn:#111;
-      --btnText:#fff;
-    }
-    *{box-sizing:border-box}
-    body{
-      margin:0;
-      font-family: Arial, sans-serif;
-      background:var(--bg);
-      color:var(--text);
-      height:100vh;
-      overflow:hidden;
-    }
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>KAI</title>
+<style>
+:root{
+  --bg:#ffffff;
+  --rz:#f2f2f2;
+  --text:#111;
+  --btn:#111;
+}
 
-    .screen{
-      height:100vh;
-      display:none;
-      padding:20px;
-      padding-bottom: calc(20px + env(safe-area-inset-bottom));
-    }
-    .screen.active{display:flex; flex-direction:column;}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family: Arial, sans-serif;
+  height:100vh;
+  overflow:hidden;
+}
 
-    .welcome{
-      justify-content:center;
-      gap:16px;
-    }
-    .card{
-      border:1px solid #e6e6e6;
-      border-radius:18px;
-      padding:18px;
-      max-width:520px;
-    }
+/* === ЕКРАНИ === */
+.screen{
+  height:100vh;
+  display:none;
+  padding:20px;
+}
+.screen.active{display:flex; flex-direction:column;}
 
-    .primary{
-      width:100%;
-      padding:14px 16px;
-      border:0;
-      border-radius:16px;
-      background:var(--btn);
-      color:var(--btnText);
-      font-size:16px;
-      font-weight:700;
-      cursor:pointer;
-    }
+/* === ВІТАННЯ === */
+.card{
+  border:1px solid #e6e6e6;
+  border-radius:18px;
+  padding:18px;
+}
+.primary{
+  width:100%;
+  padding:14px;
+  border:0;
+  border-radius:16px;
+  background:#111;
+  color:white;
+  font-size:16px;
+}
 
-    .work{ padding:0; height:100vh; }
-    .work-inner{ height:100vh; display:flex; flex-direction:column; }
+/* === РОБОЧИЙ ЕКРАН === */
+.work{ padding:0; height:100vh; }
 
-    .rz{
-      flex:1;
-      background:var(--rz);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:0;
-      position:relative;
-      overflow:hidden;
-    }
+.work-inner{
+  height:100vh;
+  display:flex;
+  flex-direction:column;
+}
 
-    /* ✅ ВАЖЛИВО:
-       video/preview займають 100% РЗ, але без розтягування:
-       object-fit: contain => "вмістити повністю"
-    */
-    #video, #preview{
-      width:100%;
-      height:100%;
-      display:none;
-      background:var(--rz); /* щоб поля були сірі */
-      object-fit:contain;    /* ✅ НЕ РОЗТЯГУЄ, НЕ Обрізає */
-    }
+/* Робоча зона */
+.rz{
+  flex:1;
+  background:var(--rz);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  position:relative;
+  overflow:hidden;
+}
 
-    .hint{
-      position:absolute;
-      text-align:center;
-      color:#777;
-      padding:16px;
-      line-height:1.4;
-    }
+/* Відео та фото — БЕЗ РОЗТЯГУВАННЯ */
+#video, #preview{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  display:none;
+}
 
-    .top-chip{
-      position:absolute;
-      top:12px;
-      left:12px;
-      right:12px;
-      display:flex;
-      gap:10px;
-      justify-content:space-between;
-      pointer-events:none;
-    }
-    .chip{
-      pointer-events:none;
-      background:rgba(255,255,255,0.85);
-      border:1px solid #e6e6e6;
-      border-radius:999px;
-      padding:8px 12px;
-      font-size:13px;
-      color:#333;
-      backdrop-filter: blur(6px);
-      max-width:70%;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      white-space:nowrap;
-    }
+/* Підказка */
+.hint{
+  position:absolute;
+  text-align:center;
+  color:#777;
+}
 
-    .bottom-bar{
-      position:fixed;
-      left:0; right:0; bottom:0;
-      padding:12px;
-      padding-bottom: calc(12px + env(safe-area-inset-bottom));
-      border-top:1px solid #e8e8e8;
-      background:#fff;
-      display:flex;
-      gap:12px;
-    }
+/* Нижні кнопки */
+.bottom-bar{
+  position:fixed;
+  left:0; right:0; bottom:0;
+  padding:12px;
+  background:white;
+  display:flex;
+  gap:12px;
+  border-top:1px solid #e8e8e8;
+}
 
-    .bbtn{
-      flex:1;
-      padding:14px 12px;
-      border:0;
-      border-radius:16px;
-      background:#111;
-      color:#fff;
-      font-size:16px;
-      font-weight:700;
-      cursor:pointer;
-    }
-    .bbtn.secondary{ background:#2b2b2b; }
+.bbtn{
+  flex:1;
+  padding:14px;
+  border:0;
+  border-radius:16px;
+  background:#111;
+  color:white;
+  font-size:16px;
+}
 
-    input[type="file"]{ display:none; }
-  </style>
+.bbtn.secondary{ background:#2b2b2b; }
+
+input[type="file"]{ display:none; }
+</style>
 </head>
+
 <body>
 
-<section id="screenWelcome" class="screen welcome active">
+<!-- Екран 1 -->
+<section id="screenWelcome" class="screen active">
   <div class="card">
     <h1>KAI</h1>
-    <p><b>Ціль застосунку:</b> зробити з фото <b>чорно-біле</b> зображення.</p>
-    <p>Натисни “Почати”, щоб увімкнути камеру або вибрати світлину.</p>
+    <p>Мета — зробити з фото чорно-біле зображення.</p>
     <button id="btnStart" class="primary">Почати</button>
   </div>
 </section>
 
+<!-- Екран 2 -->
 <section id="screenWork" class="screen work">
-  <div class="work-inner">
+<div class="work-inner">
 
-    <div class="rz" id="rz">
-      <video id="video" autoplay playsinline></video>
-      <img id="preview" alt="preview" />
-      <div class="hint" id="hint">
-        Тут буде робоча зона (РЗ).<br>
-        Натисни <b>Камера</b> або <b>Світлини</b> знизу.
-      </div>
-
-      <div class="top-chip">
-        <div class="chip" id="statusChip">Готово</div>
-        <div class="chip" id="fileChip">Файл: —</div>
-      </div>
+  <div class="rz">
+    <video id="video" autoplay playsinline></video>
+    <img id="preview" alt="preview"/>
+    <div class="hint" id="hint">
+      Натисни <b>Камера</b> або <b>Світлини</b>
     </div>
-
-    <div class="bottom-bar">
-      <button id="btnLeft" class="bbtn">Камера</button>
-      <button id="btnRight" class="bbtn secondary">Світлини</button>
-    </div>
-
-    <input id="fileInput" type="file" accept="image/*" />
   </div>
+
+  <div class="bottom-bar">
+    <button id="btnLeft" class="bbtn">Камера</button>
+    <button id="btnRight" class="bbtn secondary">Світлини</button>
+  </div>
+
+  <input id="fileInput" type="file" accept="image/*" />
+</div>
 </section>
 
 <script>
 const screenWelcome = document.getElementById('screenWelcome');
 const screenWork = document.getElementById('screenWork');
-
 const btnLeft = document.getElementById('btnLeft');
 const btnRight = document.getElementById('btnRight');
 
 const video = document.getElementById('video');
 const preview = document.getElementById('preview');
 const hint = document.getElementById('hint');
-
-const statusChip = document.getElementById('statusChip');
-const fileChip = document.getElementById('fileChip');
-
 const fileInput = document.getElementById('fileInput');
 
 let stream = null;
 let cameraOn = false;
-
-function pad2(n){ return String(n).padStart(2,'0'); }
-function makeFilename(){
-  const d = new Date();
-  const yyyy = d.getFullYear();
-  const mm = pad2(d.getMonth()+1);
-  const dd = pad2(d.getDate());
-  const hh = pad2(d.getHours());
-  const mi = pad2(d.getMinutes());
-  const ss = pad2(d.getSeconds());
-  return `kai_${yyyy}-${mm}-${dd}_${hh}-${mi}-${ss}.jpg`;
-}
-
-function setStatus(text){ statusChip.textContent = text; }
-function setFile(name){ fileChip.textContent = `Файл: ${name || '—'}`; }
 
 document.getElementById('btnStart').addEventListener('click', () => {
   screenWelcome.classList.remove('active');
   screenWork.classList.add('active');
 });
 
+/* === КАМЕРА === */
 async function startCamera(){
-  try{
-    stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "environment" },
-      audio: false
-    });
+  stream = await navigator.mediaDevices.getUserMedia({
+    video:{facingMode:"environment"}
+  });
 
-    video.srcObject = stream;
+  video.srcObject = stream;
+  video.style.display = "block";
+  preview.style.display = "none";
+  hint.style.display = "none";
 
-    video.style.display = "block";
-    preview.style.display = "none";
-    hint.style.display = "none";
-
-    cameraOn = true;
-    btnLeft.textContent = "Вийти";
-    btnRight.textContent = "Фото";
-
-    setStatus("Камера увімкнена");
-    setFile("—");
-  } catch(err){
-    alert("Не вдалося відкрити камеру: " + err.message);
-    setStatus("Помилка камери");
-  }
+  cameraOn = true;
+  btnLeft.textContent = "Вийти";
+  btnRight.textContent = "Фото";
 }
 
 function stopCamera(){
-  if(stream){
-    stream.getTracks().forEach(t => t.stop());
-  }
-  stream = null;
+  stream.getTracks().forEach(t=>t.stop());
+  video.style.display="none";
+  hint.style.display="block";
+  cameraOn=false;
 
-  video.style.display = "none";
-  if(preview.style.display !== "block") hint.style.display = "block";
-
-  cameraOn = false;
-  btnLeft.textContent = "Камера";
-  btnRight.textContent = "Світлини";
-  setStatus("Готово");
+  btnLeft.textContent="Камера";
+  btnRight.textContent="Світлини";
 }
 
-function saveBlob(blob, filename){
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-
-function capturePhoto(){
-  if(!stream) return;
-
+/* === ЗРОБИТИ ФОТО І ПОКАЗАТИ В РЗ === */
+function takePhoto(){
   const canvas = document.createElement('canvas');
-  const w = video.videoWidth;
-  const h = video.videoHeight;
-
-  if(!w || !h){
-    alert("Камера ще не готова. Спробуй ще раз.");
-    return;
-  }
-
-  canvas.width = w;
-  canvas.height = h;
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
 
   const ctx = canvas.getContext('2d');
-  ctx.drawImage(video, 0, 0, w, h);
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-  canvas.toBlob((blob) => {
-    if(!blob){
-      alert("Не вдалося зробити фото.");
-      return;
-    }
+  canvas.toBlob(blob=>{
+    const url = URL.createObjectURL(blob);
 
-    const filename = makeFilename();
+    // 👉 Головне: фото ЗАЛИШАЄТЬСЯ в РЗ
+    preview.src = url;
+    preview.style.display="block";
+    video.style.display="none";
 
-    // показ превʼю
-    preview.src = URL.createObjectURL(blob);
-    preview.style.display = "block";
-    video.style.display = "none";
-
-    // збереження
-    saveBlob(blob, filename);
-
-    setStatus("Фото збережено");
-    setFile(filename);
-  }, 'image/jpeg', 0.92);
+    // автоматичне збереження
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = "kai_"+new Date().toISOString().replace(/[:.]/g,"-")+".jpg";
+    a.click();
+  }, "image/jpeg", 0.92);
 }
 
-btnLeft.addEventListener('click', () => {
+/* === КНОПКИ === */
+btnLeft.addEventListener('click',()=>{
   if(!cameraOn) startCamera();
   else stopCamera();
 });
 
-btnRight.addEventListener('click', () => {
+btnRight.addEventListener('click',()=>{
   if(cameraOn){
-    capturePhoto();
+    takePhoto();        // 👉 робить фото і показує в РЗ
   } else {
-    fileInput.value = "";
-    fileInput.click();
+    fileInput.click();  // вибір з галереї
   }
 });
 
-fileInput.addEventListener('change', () => {
-  const file = fileInput.files && fileInput.files[0];
+/* === ВИБІР ФОТО З ГАЛЕРЕЇ === */
+fileInput.addEventListener('change',()=>{
+  const file = fileInput.files[0];
   if(!file) return;
-
-  if(cameraOn) stopCamera();
 
   const url = URL.createObjectURL(file);
   preview.src = url;
-  preview.style.display = "block";
-  video.style.display = "none";
-  hint.style.display = "none";
-
-  setStatus("Світлину вибрано");
-  setFile(file.name || "photo.jpg");
+  preview.style.display="block";
+  video.style.display="none";
+  hint.style.display="none";
 });
 </script>
 
