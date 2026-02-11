@@ -52,34 +52,27 @@ body{
 .rz{
   flex:1;
   background:var(--rz);
-  position:relative;
+  position:relative;   /* ключове */
   overflow:hidden;
-
-  /* Відображення (камера/фото) має починатися зверху зліва */
-  display:flex;
-  align-items:flex-start;      /* top */
-  justify-content:flex-start;  /* left */
 }
 
-/* ✅ Відео/фото: без розтягування, але приклеєні до top-left */
+/* === ВІДЕО ТА ФОТО — ЖОРСТКО TOP-LEFT === */
 #video, #preview{
-  display:none;
+  position:absolute;   /* 🔑 ГАРАНТІЯ позиції */
+  top:0;
+  left:0;
 
-  /* не розтягуємо */
   max-width:100%;
   max-height:100%;
   width:100%;
   height:100%;
 
-  object-fit:contain;
-
-  /* прибираємо будь-які зсуви */
-  margin:0;
-  padding:0;
-  align-self:flex-start;
+  object-fit:contain;  /* без розтягування */
+  display:none;
+  background:var(--rz);
 }
 
-/* ✅ Підказка завжди по центру РЗ */
+/* === ПІДКАЗКА — ПО ЦЕНТРУ РЗ === */
 .hint{
   position:absolute;
   left:50%;
@@ -123,7 +116,7 @@ input[type="file"]{ display:none; }
 <!-- Екран 1 -->
 <section id="screenWelcome" class="screen active">
   <div class="card">
-    <h1>KAI</h1>
+    <h1>KAI 0.06</h1>
     <p>Мета — зробити з фото чорно-біле зображення.</p>
     <button id="btnStart" class="primary">Почати</button>
   </div>
@@ -184,16 +177,14 @@ function clearRZ(){
 
   video.srcObject = null;
   video.style.display = "none";
-
   preview.removeAttribute('src');
   preview.style.display = "none";
-
   hint.style.display = "block";
 
   lastBlob = null;
   lastFilename = null;
-
   cameraOn = false;
+
   btnLeft.textContent = "Камера";
   btnRight.textContent = "Світлини";
 }
@@ -204,7 +195,6 @@ async function startCamera(){
   });
 
   video.srcObject = stream;
-
   video.style.display = "block";
   preview.style.display = "none";
   hint.style.display = "none";
@@ -256,7 +246,7 @@ btnLeft.addEventListener('click',()=>{
   if(!cameraOn){
     startCamera();
   } else {
-    clearRZ(); // Вийти = чиста РЗ
+    clearRZ();
   }
 });
 
