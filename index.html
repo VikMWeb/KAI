@@ -53,23 +53,29 @@ body{
   flex-direction:column;
 }
 
-/* Робоча зона */
+/* === РОБОЧА ЗОНА (РЗ) === */
 .rz{
   flex:1;
   background:var(--rz);
   display:flex;
-  align-items:center;
-  justify-content:center;
+
+  /* >>> ТВОЯ ВИМОГА <<< */
+  align-items:flex-start;     /* по верху */
+  justify-content:flex-start; /* зліва */
+
   position:relative;
   overflow:hidden;
 }
 
-/* Відео та фото — БЕЗ РОЗТЯГУВАННЯ */
+/* === ВІДЕО ТА ФОТО === */
 #video, #preview{
   width:100%;
   height:100%;
-  object-fit:contain;
+  object-fit:contain;   /* не розтягує */
   display:none;
+
+  /* щоб не "липло" до країв при масштабі */
+  align-self:flex-start;
 }
 
 /* Підказка */
@@ -159,38 +165,32 @@ document.getElementById('btnStart').addEventListener('click', () => {
   screenWork.classList.add('active');
 });
 
-/* === ГЕНЕРАТОР ІМЕНІ === */
+/* === ІМʼЯ ФАЙЛУ === */
 function makeFilename(){
   const d = new Date();
   return "kai_" + d.toISOString().replace(/[:.]/g,"-") + ".jpg";
 }
 
-/* === ПОВНЕ ОЧИЩЕННЯ РЗ === */
+/* === ОЧИЩЕННЯ РЗ ПРИ "ВИЙТИ" === */
 function clearRZ(){
-  // зупиняємо відео
   if(stream){
     stream.getTracks().forEach(t=>t.stop());
     stream = null;
   }
 
-  // ховаємо все
   video.style.display = "none";
   preview.style.display = "none";
-
-  // показуємо підказку
   hint.style.display = "block";
 
-  // скидаємо дані
   lastBlob = null;
   lastFilename = null;
 
-  // кнопки в початковий стан
   cameraOn = false;
   btnLeft.textContent = "Камера";
   btnRight.textContent = "Світлини";
 }
 
-/* === КАМЕРА === */
+/* === УВІМКНУТИ КАМЕРУ === */
 async function startCamera(){
   stream = await navigator.mediaDevices.getUserMedia({
     video:{facingMode:"environment"}
@@ -251,8 +251,7 @@ btnLeft.addEventListener('click',()=>{
   if(!cameraOn){
     startCamera();
   } else {
-    // >>> ТУТ ГОЛОВНЕ: ВИЙТИ = ОЧИСТИТИ РЗ <<<
-    clearRZ();
+    clearRZ();   // Вийти = чиста РЗ
   }
 });
 
@@ -273,7 +272,7 @@ fileInput.addEventListener('change',()=>{
   const file = fileInput.files[0];
   if(!file) return;
 
-  clearRZ(); // якщо була камера — чистимо
+  clearRZ();
 
   const url = URL.createObjectURL(file);
   preview.src = url;
