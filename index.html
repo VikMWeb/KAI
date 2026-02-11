@@ -151,18 +151,43 @@ const fileInput = document.getElementById('fileInput');
 
 let stream = null;
 let cameraOn = false;
-let lastBlob = null;        // знімок зберігаємо тут
-let lastFilename = null;    // назва файлу
+let lastBlob = null;
+let lastFilename = null;
 
 document.getElementById('btnStart').addEventListener('click', () => {
   screenWelcome.classList.remove('active');
   screenWork.classList.add('active');
 });
 
-/* === ГЕНЕРАТОР ІМЕНІ ФАЙЛУ === */
+/* === ГЕНЕРАТОР ІМЕНІ === */
 function makeFilename(){
   const d = new Date();
   return "kai_" + d.toISOString().replace(/[:.]/g,"-") + ".jpg";
+}
+
+/* === ПОВНЕ ОЧИЩЕННЯ РЗ === */
+function clearRZ(){
+  // зупиняємо відео
+  if(stream){
+    stream.getTracks().forEach(t=>t.stop());
+    stream = null;
+  }
+
+  // ховаємо все
+  video.style.display = "none";
+  preview.style.display = "none";
+
+  // показуємо підказку
+  hint.style.display = "block";
+
+  // скидаємо дані
+  lastBlob = null;
+  lastFilename = null;
+
+  // кнопки в початковий стан
+  cameraOn = false;
+  btnLeft.textContent = "Камера";
+  btnRight.textContent = "Світлини";
 }
 
 /* === КАМЕРА === */
@@ -182,18 +207,6 @@ async function startCamera(){
   lastBlob = null;
 }
 
-function stopCamera(){
-  if(stream){
-    stream.getTracks().forEach(t=>t.stop());
-  }
-  video.style.display="none";
-  hint.style.display="block";
-  cameraOn=false;
-
-  btnLeft.textContent="Камера";
-  btnRight.textContent="Світлини";
-}
-
 /* === ЗРОБИТИ ФОТО (БЕЗ АВТОЗБЕРЕЖЕННЯ) === */
 function takePhoto(){
   const canvas = document.createElement('canvas');
@@ -209,18 +222,15 @@ function takePhoto(){
 
     const url = URL.createObjectURL(blob);
 
-    // Показуємо фото в РЗ
     preview.src = url;
     preview.style.display="block";
     video.style.display="none";
 
-    // 👉 ЗМІНА КНОПКИ: Фото → Зберегти
     btnRight.textContent = "Зберегти";
-
   }, "image/jpeg", 0.92);
 }
 
-/* === ЗБЕРЕГТИ ФОТО (ТІЛЬКИ ПІСЛЯ КЛІКУ) === */
+/* === ЗБЕРЕГТИ ФОТО === */
 function savePhoto(){
   if(!lastBlob){
     alert("Спочатку зроби фото!");
@@ -233,25 +243,28 @@ function savePhoto(){
   a.download = lastFilename;
   a.click();
 
-  // Після збереження повертаємо кнопку назад
   btnRight.textContent = "Фото";
 }
 
 /* === КНОПКИ === */
 btnLeft.addEventListener('click',()=>{
-  if(!cameraOn) startCamera();
-  else stopCamera();
+  if(!cameraOn){
+    startCamera();
+  } else {
+    // >>> ТУТ ГОЛОВНЕ: ВИЙТИ = ОЧИСТИТИ РЗ <<<
+    clearRZ();
+  }
 });
 
 btnRight.addEventListener('click',()=>{
   if(cameraOn){
     if(btnRight.textContent === "Фото"){
-      takePhoto();        // робимо знімок
+      takePhoto();
     } else {
-      savePhoto();        // зберігаємо
+      savePhoto();
     }
   } else {
-    fileInput.click();    // вибір з галереї
+    fileInput.click();
   }
 });
 
@@ -260,15 +273,13 @@ fileInput.addEventListener('change',()=>{
   const file = fileInput.files[0];
   if(!file) return;
 
-  if(cameraOn) stopCamera();
+  clearRZ(); // якщо була камера — чистимо
 
   const url = URL.createObjectURL(file);
   preview.src = url;
   preview.style.display="block";
-  video.style.display="none";
   hint.style.display="none";
 
-  // для вибраного фото теж дозволимо зберегти
   lastBlob = file;
   lastFilename = file.name || makeFilename();
 });
