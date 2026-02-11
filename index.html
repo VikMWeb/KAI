@@ -151,11 +151,19 @@ const fileInput = document.getElementById('fileInput');
 
 let stream = null;
 let cameraOn = false;
+let lastBlob = null;        // знімок зберігаємо тут
+let lastFilename = null;    // назва файлу
 
 document.getElementById('btnStart').addEventListener('click', () => {
   screenWelcome.classList.remove('active');
   screenWork.classList.add('active');
 });
+
+/* === ГЕНЕРАТОР ІМЕНІ ФАЙЛУ === */
+function makeFilename(){
+  const d = new Date();
+  return "kai_" + d.toISOString().replace(/[:.]/g,"-") + ".jpg";
+}
 
 /* === КАМЕРА === */
 async function startCamera(){
@@ -171,10 +179,13 @@ async function startCamera(){
   cameraOn = true;
   btnLeft.textContent = "Вийти";
   btnRight.textContent = "Фото";
+  lastBlob = null;
 }
 
 function stopCamera(){
-  stream.getTracks().forEach(t=>t.stop());
+  if(stream){
+    stream.getTracks().forEach(t=>t.stop());
+  }
   video.style.display="none";
   hint.style.display="block";
   cameraOn=false;
@@ -183,7 +194,7 @@ function stopCamera(){
   btnRight.textContent="Світлини";
 }
 
-/* === ЗРОБИТИ ФОТО І ПОКАЗАТИ В РЗ === */
+/* === ЗРОБИТИ ФОТО (БЕЗ АВТОЗБЕРЕЖЕННЯ) === */
 function takePhoto(){
   const canvas = document.createElement('canvas');
   canvas.width = video.videoWidth;
@@ -193,19 +204,37 @@ function takePhoto(){
   ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
   canvas.toBlob(blob=>{
+    lastBlob = blob;
+    lastFilename = makeFilename();
+
     const url = URL.createObjectURL(blob);
 
-    // 👉 Головне: фото ЗАЛИШАЄТЬСЯ в РЗ
+    // Показуємо фото в РЗ
     preview.src = url;
     preview.style.display="block";
     video.style.display="none";
 
-    // автоматичне збереження
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = "kai_"+new Date().toISOString().replace(/[:.]/g,"-")+".jpg";
-    a.click();
+    // 👉 ЗМІНА КНОПКИ: Фото → Зберегти
+    btnRight.textContent = "Зберегти";
+
   }, "image/jpeg", 0.92);
+}
+
+/* === ЗБЕРЕГТИ ФОТО (ТІЛЬКИ ПІСЛЯ КЛІКУ) === */
+function savePhoto(){
+  if(!lastBlob){
+    alert("Спочатку зроби фото!");
+    return;
+  }
+
+  const url = URL.createObjectURL(lastBlob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = lastFilename;
+  a.click();
+
+  // Після збереження повертаємо кнопку назад
+  btnRight.textContent = "Фото";
 }
 
 /* === КНОПКИ === */
@@ -216,9 +245,13 @@ btnLeft.addEventListener('click',()=>{
 
 btnRight.addEventListener('click',()=>{
   if(cameraOn){
-    takePhoto();        // 👉 робить фото і показує в РЗ
+    if(btnRight.textContent === "Фото"){
+      takePhoto();        // робимо знімок
+    } else {
+      savePhoto();        // зберігаємо
+    }
   } else {
-    fileInput.click();  // вибір з галереї
+    fileInput.click();    // вибір з галереї
   }
 });
 
@@ -227,11 +260,17 @@ fileInput.addEventListener('change',()=>{
   const file = fileInput.files[0];
   if(!file) return;
 
+  if(cameraOn) stopCamera();
+
   const url = URL.createObjectURL(file);
   preview.src = url;
   preview.style.display="block";
   video.style.display="none";
   hint.style.display="none";
+
+  // для вибраного фото теж дозволимо зберегти
+  lastBlob = file;
+  lastFilename = file.name || makeFilename();
 });
 </script>
 
