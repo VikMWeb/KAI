@@ -3,14 +3,13 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>KAI 09</title>
+<title>KAI 10</title>
 <style>
 :root{
   --bg:#ffffff;
   --rz:#f2f2f2;
   --text:#111;
 }
-
 *{box-sizing:border-box}
 body{
   margin:0;
@@ -102,6 +101,64 @@ body{
   padding:0 10px;
 }
 
+/* OCR статус */
+.status-badge{
+  position:absolute;
+  top:12px;
+  left:12px;
+  background:rgba(255,255,255,0.92);
+  border:1px solid #e6e6e6;
+  border-radius:999px;
+  padding:8px 12px;
+  font-size:13px;
+  color:#333;
+  display:none;
+}
+.status-badge.shown{ display:inline-block; }
+
+/* === OCR оверлей на фото === */
+.ocr-overlay{
+  position:absolute;
+  left:12px;
+  right:12px;
+  bottom:12px; /* поверх фото внизу РЗ */
+  background:rgba(0,0,0,0.65);
+  color:#fff;
+  border-radius:16px;
+  padding:12px;
+  display:none;
+  backdrop-filter: blur(6px);
+}
+.ocr-overlay.shown{ display:block; }
+
+.ocr-actions{
+  display:flex;
+  gap:10px;
+  margin-bottom:10px;
+}
+.smallbtn{
+  flex:1;
+  padding:12px;
+  border:0;
+  border-radius:14px;
+  background:#fff;
+  color:#111;
+  font-weight:800;
+  cursor:pointer;
+}
+.smallbtn.secondary{
+  background:#d8d8d8;
+  color:#111;
+}
+
+.ocr-text{
+  white-space:pre-wrap;
+  font-size:14px;
+  line-height:1.35;
+  max-height:160px;
+  overflow:auto;
+}
+
 /* Нижні кнопки */
 .bottom-bar{
   position:fixed;
@@ -122,71 +179,13 @@ body{
   background:#111;
   color:#fff;
   font-size:16px;
-  font-weight:700;
+  font-weight:800;
   cursor:pointer;
 }
 .bbtn.secondary{ background:#2b2b2b; }
 .bbtn.gray{ background:#444; }
 
 input[type="file"]{ display:none; }
-
-/* Панель результату OCR */
-.text-panel{
-  position:absolute;
-  left:12px;
-  right:12px;
-  bottom:80px;
-  background:rgba(255,255,255,0.95);
-  border:1px solid #e6e6e6;
-  border-radius:16px;
-  padding:12px;
-  display:none;
-}
-.text-panel.shown{ display:block; }
-
-.text-panel .row{
-  display:flex;
-  gap:10px;
-  margin-bottom:10px;
-}
-.smallbtn{
-  flex:1;
-  padding:12px;
-  border:0;
-  border-radius:14px;
-  background:#111;
-  color:#fff;
-  font-weight:700;
-  cursor:pointer;
-}
-.smallbtn.secondary{ background:#2b2b2b; }
-
-textarea{
-  width:100%;
-  height:160px;
-  resize:none;
-  border-radius:12px;
-  border:1px solid #ddd;
-  padding:10px;
-  font-size:14px;
-  outline:none;
-  background:#fff;
-}
-
-/* Статус OCR (маленький бейдж) */
-.status-badge{
-  position:absolute;
-  top:12px;
-  left:12px;
-  background:rgba(255,255,255,0.9);
-  border:1px solid #e6e6e6;
-  border-radius:999px;
-  padding:8px 12px;
-  font-size:13px;
-  color:#333;
-  display:none;
-}
-.status-badge.shown{ display:inline-block; }
 </style>
 </head>
 
@@ -195,8 +194,8 @@ textarea{
 <!-- Екран 1 -->
 <section id="screenWelcome" class="screen active">
   <div class="card">
-    <h1>KAI 09</h1>
-    <p>Мета — працювати з фото (камера/світлини) та розпізнавати текст.</p>
+    <h1>KAI 10</h1>
+    <p>Мета — працювати з фото (камера/світлини) та показувати OCR текст поверх фото.</p>
     <button id="btnStart" class="primary">Почати</button>
   </div>
 </section>
@@ -217,12 +216,13 @@ textarea{
         Натисни <b>Камера</b> або <b>Світлини</b>
       </div>
 
-      <div class="text-panel" id="textPanel">
-        <div class="row">
+      <!-- OCR оверлей -->
+      <div class="ocr-overlay" id="ocrOverlay">
+        <div class="ocr-actions">
           <button class="smallbtn" id="btnCopy">Копіювати</button>
-          <button class="smallbtn secondary" id="btnCloseText">Закрити</button>
+          <button class="smallbtn secondary" id="btnCloseOverlay">Закрити</button>
         </div>
-        <textarea id="textOut" placeholder="Тут буде розпізнаний текст…"></textarea>
+        <div class="ocr-text" id="ocrText">(тут буде текст)</div>
       </div>
     </div>
 
@@ -252,12 +252,13 @@ const preview = document.getElementById('preview');
 const hint = document.getElementById('hint');
 
 const statusBadge = document.getElementById('statusBadge');
-const textPanel = document.getElementById('textPanel');
-const textOut = document.getElementById('textOut');
-const btnCopy = document.getElementById('btnCopy');
-const btnCloseText = document.getElementById('btnCloseText');
-
 const fileInput = document.getElementById('fileInput');
+
+/* OCR overlay */
+const ocrOverlay = document.getElementById('ocrOverlay');
+const ocrText = document.getElementById('ocrText');
+const btnCopy = document.getElementById('btnCopy');
+const btnCloseOverlay = document.getElementById('btnCloseOverlay');
 
 let stream = null;
 let cameraOn = false;
@@ -298,6 +299,11 @@ function makeFilename(){
   return `kai_${yyyy}-${mm}-${dd}_${hh}-${mi}-${ss}.jpg`;
 }
 
+function hideOcrOverlay(){
+  ocrOverlay.classList.remove('shown');
+  ocrText.textContent = "";
+}
+
 /* Повна очистка РЗ при "Вийти" */
 function clearRZ(){
   if(stream){
@@ -320,9 +326,8 @@ function clearRZ(){
   btnRight.textContent = "Світлини";
 
   hide(btnText);
-  textPanel.classList.remove('shown');
-  textOut.value = "";
   hideStatus();
+  hideOcrOverlay();
 }
 
 /* Увімкнути камеру */
@@ -344,8 +349,8 @@ async function startCamera(){
     btnRight.textContent = "Фото";
 
     hide(btnText);
-    textPanel.classList.remove('shown');
-    textOut.value = "";
+    hideStatus();
+    hideOcrOverlay();
 
     lastBlob = null;
     lastFilename = null;
@@ -390,9 +395,8 @@ function takePhoto(){
     btnRight.textContent = "Зберегти";
     show(btnText);
 
-    textPanel.classList.remove('shown');
-    textOut.value = "";
     hideStatus();
+    hideOcrOverlay();
   }, "image/jpeg", 0.92);
 }
 
@@ -414,7 +418,7 @@ function savePhoto(){
   btnRight.textContent = "Фото";
 }
 
-/* OCR тексту з фото */
+/* OCR + показ тексту поверх фото */
 async function recognizeText(){
   if(!lastBlob || !preview.src){
     alert("Немає фото для розпізнавання.");
@@ -425,12 +429,10 @@ async function recognizeText(){
     return;
   }
 
-  textPanel.classList.remove('shown');
-  textOut.value = "";
+  hideOcrOverlay();
   showStatus("Розпізнаю текст…");
 
   try{
-    // Спробуємо укр+eng (якщо укр не підтягнеться — впаде в catch і спробуємо eng)
     let result;
     try{
       result = await Tesseract.recognize(preview.src, 'ukr+eng');
@@ -439,8 +441,8 @@ async function recognizeText(){
     }
 
     const text = (result && result.data && result.data.text) ? result.data.text.trim() : "";
-    textOut.value = text || "(Текст не знайдено)";
-    textPanel.classList.add('shown');
+    ocrText.textContent = text || "(Текст не знайдено)";
+    ocrOverlay.classList.add('shown');
   } catch(err){
     alert("Помилка OCR: " + (err && err.message ? err.message : err));
   } finally {
@@ -492,25 +494,27 @@ fileInput.addEventListener('change', () => {
   lastBlob = file;
   lastFilename = file.name || makeFilename();
 
-  // після вибору фото теж можна розпізнавати текст
   show(btnText);
-  textPanel.classList.remove('shown');
-  textOut.value = "";
   hideStatus();
+  hideOcrOverlay();
 });
 
-/* Панель тексту */
-btnCloseText.addEventListener('click', () => {
-  textPanel.classList.remove('shown');
-});
+/* Оверлей: копіювати/закрити */
+btnCloseOverlay.addEventListener('click', () => hideOcrOverlay());
+
 btnCopy.addEventListener('click', async () => {
+  const txt = ocrText.textContent || "";
   try{
-    await navigator.clipboard.writeText(textOut.value || "");
+    await navigator.clipboard.writeText(txt);
     alert("Скопійовано ✅");
   } catch(e){
     // fallback
-    textOut.select();
+    const ta = document.createElement('textarea');
+    ta.value = txt;
+    document.body.appendChild(ta);
+    ta.select();
     document.execCommand('copy');
+    ta.remove();
     alert("Скопійовано ✅");
   }
 });
