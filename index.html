@@ -10,6 +10,7 @@
   --rz:#f2f2f2;
   --text:#111;
 }
+
 *{box-sizing:border-box}
 body{
   margin:0;
@@ -101,12 +102,12 @@ body{
   padding:0 10px;
 }
 
-/* OCR статус */
+/* Статус OCR (бейдж) */
 .status-badge{
   position:absolute;
   top:12px;
   left:12px;
-  background:rgba(255,255,255,0.92);
+  background:rgba(255,255,255,0.9);
   border:1px solid #e6e6e6;
   border-radius:999px;
   padding:8px 12px;
@@ -116,48 +117,29 @@ body{
 }
 .status-badge.shown{ display:inline-block; }
 
-/* === OCR оверлей на фото === */
+/* ✅ OCR оверлей (прямо поверх фото) */
 .ocr-overlay{
   position:absolute;
   left:12px;
   right:12px;
-  bottom:12px; /* поверх фото внизу РЗ */
-  background:rgba(0,0,0,0.65);
-  color:#fff;
+  bottom:12px;
+  background:rgba(255,255,255,0.9);
+  border:1px solid #e6e6e6;
   border-radius:16px;
-  padding:12px;
-  display:none;
-  backdrop-filter: blur(6px);
-}
-.ocr-overlay.shown{ display:block; }
-
-.ocr-actions{
-  display:flex;
-  gap:10px;
-  margin-bottom:10px;
-}
-.smallbtn{
-  flex:1;
-  padding:12px;
-  border:0;
-  border-radius:14px;
-  background:#fff;
+  padding:10px 12px;
   color:#111;
-  font-weight:800;
-  cursor:pointer;
-}
-.smallbtn.secondary{
-  background:#d8d8d8;
-  color:#111;
-}
-
-.ocr-text{
-  white-space:pre-wrap;
   font-size:14px;
   line-height:1.35;
-  max-height:160px;
+  display:none;
+
+  /* довгий текст */
+  max-height:45%;
   overflow:auto;
+
+  /* щоб не перекривало кнопки знизу */
+  margin-bottom:72px;
 }
+.ocr-overlay.shown{ display:block; }
 
 /* Нижні кнопки */
 .bottom-bar{
@@ -179,7 +161,7 @@ body{
   background:#111;
   color:#fff;
   font-size:16px;
-  font-weight:800;
+  font-weight:700;
   cursor:pointer;
 }
 .bbtn.secondary{ background:#2b2b2b; }
@@ -195,7 +177,7 @@ input[type="file"]{ display:none; }
 <section id="screenWelcome" class="screen active">
   <div class="card">
     <h1>KAI 10</h1>
-    <p>Мета — працювати з фото (камера/світлини) та показувати OCR текст поверх фото.</p>
+    <p>Мета — зробити з фото чорно-біле зображення.</p>
     <button id="btnStart" class="primary">Почати</button>
   </div>
 </section>
@@ -216,14 +198,8 @@ input[type="file"]{ display:none; }
         Натисни <b>Камера</b> або <b>Світлини</b>
       </div>
 
-      <!-- OCR оверлей -->
-      <div class="ocr-overlay" id="ocrOverlay">
-        <div class="ocr-actions">
-          <button class="smallbtn" id="btnCopy">Копіювати</button>
-          <button class="smallbtn secondary" id="btnCloseOverlay">Закрити</button>
-        </div>
-        <div class="ocr-text" id="ocrText">(тут буде текст)</div>
-      </div>
+      <!-- ✅ Текст прямо на фото -->
+      <div class="ocr-overlay" id="ocrOverlay" title="Натисни, щоб сховати"></div>
     </div>
 
     <div class="bottom-bar">
@@ -252,13 +228,9 @@ const preview = document.getElementById('preview');
 const hint = document.getElementById('hint');
 
 const statusBadge = document.getElementById('statusBadge');
-const fileInput = document.getElementById('fileInput');
-
-/* OCR overlay */
 const ocrOverlay = document.getElementById('ocrOverlay');
-const ocrText = document.getElementById('ocrText');
-const btnCopy = document.getElementById('btnCopy');
-const btnCloseOverlay = document.getElementById('btnCloseOverlay');
+
+const fileInput = document.getElementById('fileInput');
 
 let stream = null;
 let cameraOn = false;
@@ -286,6 +258,14 @@ function showStatus(text){
 function hideStatus(){
   statusBadge.classList.remove('shown');
 }
+function showOverlay(text){
+  ocrOverlay.textContent = text;
+  ocrOverlay.classList.add('shown');
+}
+function hideOverlay(){
+  ocrOverlay.textContent = "";
+  ocrOverlay.classList.remove('shown');
+}
 
 function pad2(n){ return String(n).padStart(2,'0'); }
 function makeFilename(){
@@ -297,11 +277,6 @@ function makeFilename(){
   const mi = pad2(d.getMinutes());
   const ss = pad2(d.getSeconds());
   return `kai_${yyyy}-${mm}-${dd}_${hh}-${mi}-${ss}.jpg`;
-}
-
-function hideOcrOverlay(){
-  ocrOverlay.classList.remove('shown');
-  ocrText.textContent = "";
 }
 
 /* Повна очистка РЗ при "Вийти" */
@@ -326,8 +301,8 @@ function clearRZ(){
   btnRight.textContent = "Світлини";
 
   hide(btnText);
+  hideOverlay();
   hideStatus();
-  hideOcrOverlay();
 }
 
 /* Увімкнути камеру */
@@ -349,8 +324,8 @@ async function startCamera(){
     btnRight.textContent = "Фото";
 
     hide(btnText);
+    hideOverlay();
     hideStatus();
-    hideOcrOverlay();
 
     lastBlob = null;
     lastFilename = null;
@@ -395,8 +370,8 @@ function takePhoto(){
     btnRight.textContent = "Зберегти";
     show(btnText);
 
+    hideOverlay();
     hideStatus();
-    hideOcrOverlay();
   }, "image/jpeg", 0.92);
 }
 
@@ -418,7 +393,7 @@ function savePhoto(){
   btnRight.textContent = "Фото";
 }
 
-/* OCR + показ тексту поверх фото */
+/* OCR тексту з фото -> показ прямо на фото (оверлей) */
 async function recognizeText(){
   if(!lastBlob || !preview.src){
     alert("Немає фото для розпізнавання.");
@@ -429,7 +404,7 @@ async function recognizeText(){
     return;
   }
 
-  hideOcrOverlay();
+  hideOverlay();
   showStatus("Розпізнаю текст…");
 
   try{
@@ -441,14 +416,18 @@ async function recognizeText(){
     }
 
     const text = (result && result.data && result.data.text) ? result.data.text.trim() : "";
-    ocrText.textContent = text || "(Текст не знайдено)";
-    ocrOverlay.classList.add('shown');
+    showOverlay(text || "(Текст не знайдено)");
   } catch(err){
     alert("Помилка OCR: " + (err && err.message ? err.message : err));
   } finally {
     hideStatus();
   }
 }
+
+/* Клік по оверлею — сховати */
+ocrOverlay.addEventListener('click', () => {
+  hideOverlay();
+});
 
 /* Кнопка зліва: Камера / Вийти */
 btnLeft.addEventListener('click', () => {
@@ -495,28 +474,8 @@ fileInput.addEventListener('change', () => {
   lastFilename = file.name || makeFilename();
 
   show(btnText);
+  hideOverlay();
   hideStatus();
-  hideOcrOverlay();
-});
-
-/* Оверлей: копіювати/закрити */
-btnCloseOverlay.addEventListener('click', () => hideOcrOverlay());
-
-btnCopy.addEventListener('click', async () => {
-  const txt = ocrText.textContent || "";
-  try{
-    await navigator.clipboard.writeText(txt);
-    alert("Скопійовано ✅");
-  } catch(e){
-    // fallback
-    const ta = document.createElement('textarea');
-    ta.value = txt;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    ta.remove();
-    alert("Скопійовано ✅");
-  }
 });
 </script>
 
